@@ -179,3 +179,7 @@ npm start
 
 # Notes
 本專案由 Google Gemini-2.5 Pro 完成，有沒有 bug 或是漏洞我不知道，這個 Tool 只是讓我方便使用，請自行斟酌使用。
+
+我自己先前使用的是 [Remote-Wake-Sleep-On-LAN-Server](https://github.com/bluehomewu/Remote-Wake-Sleep-On-LAN-Server/tree/main) 這個專案，但由於他的前端介面好醜，而且有點過於複雜以及回應不夠即時，所以我就自己用 Google Gemini 2.5 Pro 寫了一個。  
+這種東西應該沒有什麼太複雜的邏輯，所以我連 README.md 都讓 Gemini 幫我寫了，省得我自己打字 XD。
+
