@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>遠端喚醒控制台</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --border-color: #dee2e6;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0; padding: 20px; background-color: var(--bg-color); color: var(--text-color);
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+        .container {
+            width: 100%; max-width: 450px; background: var(--card-bg); padding: 25px 30px;
+            border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 { text-align: center; margin-bottom: 25px; font-weight: 600; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; }
+        input, select, button {
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);
+            box-sizing: border-box; font-size: 16px;
+        }
+        button {
+            background-color: var(--primary-color); color: white; cursor: pointer; border: none;
+            font-weight: 600; transition: background-color 0.2s;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
+        .hidden { display: none; }
+        #message {
+            margin-top: 20px; padding: 12px; border-radius: 8px; text-align: left;
+            font-family: "Courier New", Courier, monospace; background-color: #f0f0f0;
+            border: 1px solid var(--border-color); min-height: 50px;
+            opacity: 0; transition: opacity 0.3s;
+            overflow-y: auto; max-height: 200px;
+        }
+        #message.show { opacity: 1; }
+        #message.success { border-left: 5px solid var(--success-color); }
+        #message.error { border-left: 5px solid var(--error-color); }
+        #message.info { border-left: 5px solid var(--primary-color); }
+        #message p { margin: 5px 0; padding: 0; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>遠端喚醒服務</h1>
+        <div id="password-section">
+            <div class="form-group">
+                <label for="password">請輸入密碼</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+            <button id="submit-password">驗證並載入裝置</button>
+        </div>
+        <div id="device-section" class="hidden">
+            <div class="form-group">
+                <label for="device-select">選擇裝置</label>
+                <select id="device-select"></select>
+            </div>
+            <button id="wakeup-button">喚醒</button>
+        </div>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        const passwordSection = document.getElementById('password-section');
+        const deviceSection = document.getElementById('device-section');
+        const passwordInput = document.getElementById('password');
+        const submitPasswordBtn = document.getElementById('submit-password');
+        const deviceSelect = document.getElementById('device-select');
+        const wakeupButton = document.getElementById('wakeup-button');
+        const messageDiv = document.getElementById('message');
+
+        let devices = [];
+        let currentPassword = '';
+        let socket;
+
+        // --- WebSocket 初始化與事件處理 ---
+        function initializeWebSocket() {
+            // 使用 `ws://` 或 `wss://` 協定，並指向當前主機
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            socket = new WebSocket(`${protocol}//${window.location.host}`);
+
+            socket.onopen = () => {
+                console.log('WebSocket 連線成功');
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                // 處理後端推送的訊息
+                if (data.type === 'log') {
+                    appendLog(data.message);
+                } else if (data.type === 'done') {
+                    // 收到結束信號
+                    messageDiv.classList.add(data.success ? 'success' : 'error');
+                    wakeupButton.disabled = false;
+                    wakeupButton.textContent = '喚醒';
+                }
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket 連線已關閉');
+                appendLog('與伺服器的連線已中斷，請重新整理頁面。', 'error');
+                wakeupButton.disabled = true;
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket 錯誤:', error);
+                appendLog('連線發生錯誤。', 'error');
+            };
+        }
+        
+        // --- 頁面邏輯 ---
+        submitPasswordBtn.addEventListener('click', async () => {
+            currentPassword = passwordInput.value;
+            // ... (驗證邏輯不變)
+            const response = await fetch('/api/devices', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: currentPassword })
+            });
+            const data = await response.json();
+            if (data.success) {
+                devices = data.devices;
+                populateDeviceSelect(devices);
+                passwordSection.classList.add('hidden');
+                deviceSection.classList.remove('hidden');
+                messageDiv.innerHTML = '';
+                // 密碼驗證成功後，才初始化 WebSocket
+                initializeWebSocket();
+            } else {
+                alert(data.message);
+            }
+        });
+
+        wakeupButton.addEventListener('click', () => {
+            const selectedIndex = deviceSelect.value;
+            if (selectedIndex === "") return;
+
+            // 檢查 WebSocket 連線狀態
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                appendLog('錯誤：未連線到伺服器。', 'error');
+                return;
+            }
+
+            const selectedDevice = devices[selectedIndex];
+            
+            clearMessage();
+            messageDiv.classList.add('info', 'show'); // 顯示訊息框並設定初始樣式
+            wakeupButton.disabled = true;
+            wakeupButton.textContent = '處理中...';
+
+            // 透過 WebSocket 發送喚醒請求
+            socket.send(JSON.stringify({
+                type: 'wakeup',
+                payload: {
+                    ...selectedDevice,
+                    password: currentPassword
+                }
+            }));
+        });
+        
+        function populateDeviceSelect(devices) {
+            deviceSelect.innerHTML = '<option value="">-- 請選擇一個裝置 --</option>';
+            devices.forEach((device, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${device.name} (${device.ip})`;
+                deviceSelect.appendChild(option);
+            });
+        }
+
+        function clearMessage() {
+            messageDiv.innerHTML = '';
+            messageDiv.className = '';
+        }
+
+        // 新的日誌附加函數
+        function appendLog(logMessage) {
+            const line = document.createElement('p');
+            line.textContent = logMessage;
+            messageDiv.appendChild(line);
+            // 自動捲動到最底部
+            messageDiv.scrollTop = messageDiv.scrollHeight;
+        }
+
+    </script>
+</body>
+</html>

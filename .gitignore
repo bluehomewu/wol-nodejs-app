@@ -1,0 +1,13 @@
+# 忽略 Node.js 依賴套件資料夾
+node_modules/
+
+# 忽略包含敏感資訊的設定檔
+config.json
+devices.json
+
+# 忽略 macOS 產生的檔案
+.DS_Store
+
+# 忽略 SSL 憑證檔案
+cert.pem
+key.pem
