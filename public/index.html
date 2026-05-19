@@ -54,13 +54,25 @@
 <body>
     <div class="container">
         <h1>遠端喚醒服務</h1>
-        <div id="password-section">
-            <div class="form-group">
-                <label for="password">請輸入密碼</label>
-                <input type="password" id="password" placeholder="••••••••">
+        
+        <!-- ***** 修改開始 ***** -->
+        <!-- 使用 form 標籤包裹 -->
+        <form id="login-form">
+            <div id="password-section">
+                <!-- 為了密碼管理器相容性，加入一個看不見的 username 欄位 -->
+                <input type="text" name="username" autocomplete="username" style="display:none;">
+
+                <div class="form-group">
+                    <label for="password">請輸入密碼</label>
+                    <!-- 為 password 欄位加上 name 和 autocomplete -->
+                    <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required>
+                </div>
+                <!-- 將按鈕類型改為 submit -->
+                <button type="submit" id="submit-password">驗證並載入裝置</button>
             </div>
-            <button id="submit-password">驗證並載入裝置</button>
-        </div>
+        </form>
+        <!-- ***** 修改結束 ***** -->
+
         <div id="device-section" class="hidden">
             <div class="form-group">
                 <label for="device-select">選擇裝置</label>
@@ -72,6 +84,7 @@
     </div>
 
     <script>
+        const loginForm = document.getElementById('login-form'); // 選取 form
         const passwordSection = document.getElementById('password-section');
         const deviceSection = document.getElementById('device-section');
         const passwordInput = document.getElementById('password');
@@ -120,28 +133,37 @@
             };
         }
         
-        // --- 頁面邏輯 ---
-        submitPasswordBtn.addEventListener('click', async () => {
+        // ***** 修改開始 *****
+        // 將事件監聽器綁定到 form 的 submit 事件
+        loginForm.addEventListener('submit', async (event) => {
+            // 阻止表單預設的頁面重整行為
+            event.preventDefault(); 
+            
             currentPassword = passwordInput.value;
-            // ... (驗證邏輯不變)
+            
             const response = await fetch('/api/devices', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password: currentPassword })
             });
             const data = await response.json();
+
             if (data.success) {
                 devices = data.devices;
                 populateDeviceSelect(devices);
-                passwordSection.classList.add('hidden');
+                // 隱藏整個表單，而不是只有 password-section
+                loginForm.classList.add('hidden'); 
                 deviceSection.classList.remove('hidden');
                 messageDiv.innerHTML = '';
                 // 密碼驗證成功後，才初始化 WebSocket
                 initializeWebSocket();
             } else {
                 alert(data.message);
+                // 登入失敗後，清空密碼欄位可能是個好習慣
+                passwordInput.value = '';
             }
         });
+        // ***** 修改結束 *****
 
         wakeupButton.addEventListener('click', () => {
             const selectedIndex = deviceSelect.value;

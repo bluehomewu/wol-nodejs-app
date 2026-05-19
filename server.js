@@ -1,19 +1,18 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
+const http = require('http'); // 使用 http
 const { WebSocketServer } = require('ws');
 const { exec } = require('child_process');
 const ping = require('ping');
-const bcrypt = require('bcrypt'); // 引入 bcrypt
+const bcrypt = require('bcrypt');
 
 const app = express();
-const PORT = 5000;
+const PORT = 5000; // 如果 NAS 上 5000 被佔用，請改為其他數字 (例如 5050)
 const DEVICES_FILE = path.join(__dirname, 'devices.json');
 const CONFIG_FILE = path.join(__dirname, 'config.json');
 
 // --- 讀取設定檔 ---
-// 伺服器啟動時必須成功讀取設定，否則直接中止
 let HASHED_PASSWORD;
 try {
     const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
@@ -23,20 +22,14 @@ try {
     }
 } catch (error) {
     console.error('致命錯誤：無法讀取或解析 config.json！', error);
-    process.exit(1); // 啟動失敗
+    process.exit(1);
 }
 
 // --- 中介軟體 ---
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- SSL 憑證設定 ---
-const httpsOptions = {
-    key: fs.readFileSync(path.join(__dirname, 'key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, 'cert.pem'))
-};
-
-// --- 輔助函數 (不變) ---
+// --- 輔助函數 ---
 const loadDevices = async () => {
     try {
         const data = await fs.promises.readFile(DEVICES_FILE, 'utf-8');
@@ -60,10 +53,9 @@ const sendMagicPacket = (mac) => {
     });
 };
 
-// --- HTTP API 端點 (修改驗證邏輯) ---
+// --- HTTP API 端點 ---
 app.post('/api/devices', async (req, res) => {
     const { password } = req.body;
-    // 使用 bcrypt.compare 進行非同步比對
     const isMatch = await bcrypt.compare(password, HASHED_PASSWORD);
     if (!isMatch) {
         return res.status(401).json({ success: false, message: "密碼錯誤！" });
@@ -72,11 +64,11 @@ app.post('/api/devices', async (req, res) => {
     res.json({ success: true, devices });
 });
 
-// --- 設定 HTTPS 與 WebSocket 伺服器 ---
-const server = https.createServer(httpsOptions, app); 
+// --- 設定 HTTP 與 WebSocket 伺服器 ---
+const server = http.createServer(app); 
 const wss = new WebSocketServer({ server });
 
-// --- WebSocket 邏輯 (修改驗證邏輯) ---
+// --- WebSocket 邏輯 ---
 wss.on('connection', (ws) => {
     console.log('前端 WebSocket 已連線');
     ws.on('message', async (message) => {
@@ -85,7 +77,6 @@ wss.on('connection', (ws) => {
             if (data.type === 'wakeup') {
                 const { password, mac, ip, name } = data.payload;
                 
-                // 使用 bcrypt.compare 進行非同步比對
                 const isMatch = await bcrypt.compare(password, HASHED_PASSWORD);
                 if (!isMatch) {
                     ws.send(JSON.stringify({ type: 'log', message: '錯誤：未授權的操作！' }));
@@ -93,7 +84,6 @@ wss.on('connection', (ws) => {
                     return;
                 }
 
-                // --- 喚醒邏輯 (不變) ---
                 const initialProbe = await ping.promise.probe(ip, { timeout: 2 });
                 if (initialProbe.alive) {
                     ws.send(JSON.stringify({ type: 'log', message: `${name} 已經是醒著的！` }));
@@ -133,6 +123,7 @@ wss.on('connection', (ws) => {
 });
 
 // --- 啟動伺服器 ---
+// 注意：在 Docker Host 模式下，我們監聽 0.0.0.0 讓外部（NAS 的網路介面）可以存取
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`WOL HTTPS 伺服器正在 https://0.0.0.0:${PORT} 上運行`);
+    console.log(`WOL HTTP 伺服器正在 http://0.0.0.0:${PORT} 上運行`);
 });
