@@ -144,13 +144,31 @@
         @media (max-width: 520px) {
             body {
                 align-items: flex-start;
-                padding: 12px;
+                padding: 8px;
             }
             .container {
-                padding: 20px;
+                max-width: none;
+                padding: 24px 20px;
+                border-radius: 14px;
             }
             h1 {
-                font-size: 1.55rem;
+                font-size: 1.75rem;
+                margin-bottom: 22px;
+            }
+            .connection,
+            .status-strip,
+            .form-group,
+            #message {
+                margin-bottom: 22px;
+            }
+            input,
+            select,
+            button {
+                padding: 14px;
+                font-size: 17px;
+            }
+            .status-row {
+                padding: 10px 6px;
             }
         }
     </style>
@@ -161,7 +179,7 @@
 
         <div class="connection" aria-live="polite">
             <span id="socket-dot" class="dot"></span>
-            <span id="socket-label">未連線</span>
+            <span id="socket-label">待登入</span>
         </div>
 
         <div class="status-strip" aria-label="系統狀態">
@@ -171,7 +189,7 @@
             </div>
             <div class="status-row">
                 <span>SOCKET</span>
-                <strong id="socket-status-text">OFFLINE</strong>
+                <strong id="socket-status-text">WAITING</strong>
             </div>
             <div class="status-row">
                 <span>JOB</span>
@@ -371,7 +389,7 @@
 
         function updateSocketState(label, connected) {
             socketLabel.textContent = label;
-            socketStatusText.textContent = connected ? 'ONLINE' : 'OFFLINE';
+            socketStatusText.textContent = connected ? 'ONLINE' : (sessionStatus.textContent === 'LOCKED' ? 'WAITING' : 'OFFLINE');
             socketDot.classList.toggle('connected', connected);
         }
 
@@ -379,7 +397,9 @@
             wakeupButton.disabled = running;
             wakeupButton.textContent = running ? '處理中' : '喚醒';
             jobStatus.textContent = running ? 'RUNNING' : 'IDLE';
-            logState.textContent = running ? 'STREAMING' : 'READY';
+            if (logState) {
+                logState.textContent = running ? 'STREAMING' : 'READY';
+            }
         }
 
         function clearMessage() {
