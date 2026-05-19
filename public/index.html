@@ -7,558 +7,197 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <style>
         :root {
-            --bg: #17130f;
-            --bg-soft: #211b15;
-            --paper: #f1e8d8;
-            --paper-deep: #e1d2bb;
-            --ink: #241d18;
-            --muted: #76695a;
-            --line: rgba(36, 29, 24, 0.18);
-            --line-dark: rgba(241, 232, 216, 0.16);
-            --accent: #d66a31;
-            --accent-strong: #b84e20;
-            --copper: #a66a3f;
-            --signal: #5f9b7a;
-            --warn: #c9953a;
-            --danger: #c84b3a;
-            --shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --border-color: #dee2e6;
+            --muted-color: #6c757d;
         }
-
-        * {
-            box-sizing: border-box;
-        }
-
         body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             margin: 0;
-            min-height: 100vh;
-            color: var(--ink);
-            background:
-                linear-gradient(120deg, rgba(214, 106, 49, 0.14), transparent 34%),
-                linear-gradient(300deg, rgba(95, 155, 122, 0.14), transparent 40%),
-                repeating-linear-gradient(105deg, transparent 0 18px, rgba(241, 232, 216, 0.035) 18px 19px),
-                var(--bg);
-            font-family: "Avenir Next", "Gill Sans", "Noto Sans TC", sans-serif;
-        }
-
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            background-image:
-                radial-gradient(circle at 18% 24%, rgba(241, 232, 216, 0.12) 0 1px, transparent 1px),
-                radial-gradient(circle at 72% 68%, rgba(241, 232, 216, 0.08) 0 1px, transparent 1px);
-            background-size: 34px 34px, 52px 52px;
-            pointer-events: none;
-        }
-
-        main {
-            width: min(1180px, calc(100% - 28px));
-            min-height: 100vh;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: minmax(420px, 1fr) minmax(280px, 360px);
-            align-items: center;
-            gap: 18px;
-            padding: 28px 0;
-            position: relative;
-            z-index: 1;
-        }
-
-        .mast,
-        .workspace {
-            border: 1px solid var(--line-dark);
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
-
-        .mast {
-            min-height: 620px;
-            order: 2;
-            padding: 26px;
-            color: var(--paper);
-            background:
-                linear-gradient(160deg, rgba(214, 106, 49, 0.2), transparent 42%),
-                linear-gradient(20deg, rgba(95, 155, 122, 0.16), transparent 46%),
-                var(--bg-soft);
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
-
-        .mast::after {
-            content: "";
-            position: absolute;
-            inset: 18px;
-            border: 1px solid rgba(241, 232, 216, 0.13);
-            border-radius: 8px;
-            pointer-events: none;
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--card-bg);
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
-
-        .brand-mark {
-            width: 68px;
-            height: 68px;
-            border: 1px solid rgba(241, 232, 216, 0.32);
-            border-radius: 50%;
-            display: grid;
-            place-items: center;
-            margin-bottom: 28px;
-            background:
-                radial-gradient(circle, rgba(214, 106, 49, 0.86) 0 6px, transparent 7px),
-                conic-gradient(from 25deg, rgba(241, 232, 216, 0.08), rgba(241, 232, 216, 0.4), rgba(241, 232, 216, 0.08));
-        }
-
-        .brand-mark::before {
-            content: "";
-            width: 32px;
-            height: 32px;
-            border: 2px solid var(--paper);
-            border-top-color: transparent;
-            border-radius: 50%;
-        }
-
-        .eyebrow {
-            margin: 0 0 16px;
-            color: #eebf8b;
-            font-size: 0.76rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
         h1 {
-            margin: 0;
-            max-width: 8ch;
-            font-family: Georgia, "Noto Serif TC", serif;
-            font-size: clamp(2.85rem, 5vw, 4.8rem);
-            font-weight: 700;
-            line-height: 0.92;
-            letter-spacing: 0;
+            text-align: center;
+            margin: 0 0 20px;
+            font-weight: 600;
         }
-
-        .mast-copy {
-            width: min(100%, 300px);
-            margin: 24px 0 0;
-            color: rgba(241, 232, 216, 0.72);
-            font-size: 0.98rem;
-            line-height: 1.8;
-        }
-
         .status-strip {
             display: grid;
-            gap: 9px;
-            position: relative;
-            z-index: 1;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
         }
-
         .status-row {
-            min-height: 54px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 14px;
-            padding: 0 15px;
-            border: 1px solid rgba(241, 232, 216, 0.14);
+            padding: 8px;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
-            background: rgba(13, 11, 9, 0.22);
-            font-size: 0.92rem;
+            background: #fdfdfd;
+            text-align: center;
         }
-
-        .status-row span:first-child {
-            color: rgba(241, 232, 216, 0.56);
-            font-size: 0.74rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-        }
-
-        .status-row strong {
-            color: var(--paper);
-            font-size: 0.84rem;
-            letter-spacing: 0.04em;
-        }
-
-        .workspace {
-            min-height: 620px;
-            order: 1;
-            padding: 22px;
-            background:
-                linear-gradient(180deg, rgba(255, 252, 244, 0.82), rgba(225, 210, 187, 0.9)),
-                var(--paper);
-            display: grid;
-            grid-template-rows: auto auto 1fr;
-            gap: 18px;
-        }
-
-        .toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 14px;
-            padding: 10px 0 18px;
-            border-bottom: 1px solid var(--line);
-        }
-
-        .toolbar-title {
-            font-family: Georgia, "Noto Serif TC", serif;
-            font-size: clamp(1.5rem, 3vw, 2.15rem);
+        .status-row span {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--muted-color);
+            font-size: 11px;
             font-weight: 700;
         }
-
+        .status-row strong {
+            font-size: 12px;
+        }
         .connection {
-            display: inline-flex;
+            display: flex;
             align-items: center;
-            gap: 9px;
-            min-height: 38px;
-            padding: 0 14px;
-            border: 1px solid var(--line);
-            border-radius: 999px;
-            background: rgba(255, 250, 240, 0.72);
-            color: var(--muted);
-            font-size: 0.9rem;
-            font-weight: 800;
-            white-space: nowrap;
-        }
-
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--warn);
-            box-shadow: 0 0 0 5px rgba(201, 149, 58, 0.16);
-        }
-
-        .dot.connected {
-            background: var(--signal);
-            box-shadow: 0 0 0 5px rgba(95, 155, 122, 0.18);
-        }
-
-        form,
-        .controls {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 12px;
-            align-items: end;
-            padding: 18px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            background:
-                linear-gradient(135deg, rgba(255, 250, 240, 0.78), rgba(232, 220, 200, 0.72));
-        }
-
-        .field {
-            display: grid;
+            justify-content: center;
             gap: 8px;
+            margin-bottom: 20px;
+            color: var(--muted-color);
+            font-size: 14px;
+            font-weight: 600;
         }
-
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #ffc107;
+        }
+        .dot.connected {
+            background: var(--success-color);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
         label {
-            color: var(--muted);
-            font-size: 0.78rem;
-            font-weight: 900;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
         }
-
         input,
         select,
         button {
-            min-height: 48px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            font: inherit;
-        }
-
-        input,
-        select {
             width: 100%;
-            padding: 0 14px;
-            color: var(--ink);
-            background: rgba(255, 252, 244, 0.86);
-            outline: none;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            font-size: 16px;
         }
-
-        input:focus,
-        select:focus {
-            border-color: rgba(214, 106, 49, 0.78);
-            box-shadow: 0 0 0 4px rgba(214, 106, 49, 0.12);
-        }
-
         button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 126px;
-            padding: 0 18px;
-            color: #fff7eb;
-            background: var(--accent);
-            border-color: transparent;
-            box-shadow: 0 14px 28px rgba(184, 78, 32, 0.26);
-            font-weight: 900;
+            background-color: var(--primary-color);
+            color: white;
             cursor: pointer;
-            transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+            border: none;
+            font-weight: 600;
+            transition: background-color 0.2s;
         }
-
         button:hover:not(:disabled) {
-            background: var(--accent-strong);
-            transform: translateY(-1px);
-            box-shadow: 0 17px 32px rgba(184, 78, 32, 0.3);
+            background-color: #0056b3;
         }
-
         button:disabled {
+            background-color: #a0a0a0;
             cursor: not-allowed;
-            background: #9a8f80;
-            box-shadow: none;
         }
-
         .hidden {
             display: none;
         }
-
-        .console {
-            min-height: 310px;
-            border: 1px solid rgba(36, 29, 24, 0.22);
-            border-radius: 8px;
-            background:
-                linear-gradient(180deg, rgba(24, 21, 18, 0.96), rgba(15, 14, 12, 0.98)),
-                #12100e;
-            color: #efe4d2;
-            display: grid;
-            grid-template-rows: auto 1fr;
-            overflow: hidden;
-        }
-
-        .console-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            padding: 13px 16px;
-            border-bottom: 1px solid rgba(239, 228, 210, 0.15);
-            color: #eebf8b;
-            font-size: 0.78rem;
-            font-weight: 900;
-            letter-spacing: 0.08em;
-        }
-
         #message {
-            margin: 0;
-            padding: 16px;
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: left;
+            font-family: "Courier New", Courier, monospace;
+            background-color: #f0f0f0;
+            border: 1px solid var(--border-color);
+            min-height: 50px;
             overflow-y: auto;
-            max-height: 374px;
-            min-height: 270px;
-            font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
-            font-size: 0.9rem;
-            line-height: 1.6;
+            max-height: 200px;
         }
-
         #message p {
-            margin: 0 0 8px;
+            margin: 5px 0;
+            padding: 0;
             white-space: pre-wrap;
         }
-
-        #message p.error {
-            color: #ff9a8c;
-        }
-
         #message p.success {
-            color: #9dd9b6;
+            color: var(--success-color);
         }
-
-        @media (max-width: 820px) {
-            main {
-                grid-template-columns: 1fr;
-                align-items: start;
-                gap: 12px;
-                padding: 10px 0;
+        #message p.error {
+            color: var(--error-color);
+        }
+        @media (max-width: 520px) {
+            body {
+                align-items: flex-start;
+                padding: 12px;
             }
-
-            .mast,
-            .workspace {
-                min-height: auto;
+            .container {
+                padding: 20px;
             }
-
-            .workspace {
-                order: 1;
-                padding: 16px;
-                gap: 14px;
-            }
-
-            .mast {
-                order: 2;
-                padding: 16px;
-                display: grid;
-                gap: 16px;
-                background:
-                    linear-gradient(160deg, rgba(214, 106, 49, 0.16), transparent 44%),
-                    var(--bg-soft);
-            }
-
-            .mast::after {
-                inset: 10px;
-            }
-
-            .brand-mark {
-                width: 46px;
-                height: 46px;
-                margin-bottom: 14px;
-            }
-
-            .brand-mark::before {
-                width: 22px;
-                height: 22px;
-            }
-
-            .eyebrow {
-                margin-bottom: 8px;
-                font-size: 0.68rem;
-            }
-
             h1 {
-                max-width: none;
-                font-size: clamp(2.05rem, 10vw, 2.85rem);
-                line-height: 1;
-            }
-
-            .mast-copy {
-                width: auto;
-                max-width: none;
-                margin-top: 12px;
-                font-size: 0.9rem;
-                line-height: 1.65;
-            }
-
-            .status-strip {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 7px;
-            }
-
-            .status-row {
-                min-height: 68px;
-                flex-direction: column;
-                justify-content: center;
-                gap: 7px;
-                padding: 8px;
-                text-align: center;
-            }
-
-            .status-row span:first-child {
-                font-size: 0.62rem;
-            }
-
-            .status-row strong {
-                font-size: 0.74rem;
-                overflow-wrap: anywhere;
-            }
-        }
-
-        @media (max-width: 560px) {
-            main {
-                width: min(100% - 16px, 1180px);
-            }
-
-            form,
-            .controls {
-                grid-template-columns: 1fr;
-            }
-
-            .toolbar {
-                align-items: center;
-                flex-direction: row;
-                padding: 4px 0 14px;
-            }
-
-            .toolbar-title {
                 font-size: 1.55rem;
-            }
-
-            .connection {
-                min-height: 34px;
-                padding: 0 11px;
-                font-size: 0.82rem;
-            }
-
-            form,
-            .controls {
-                padding: 14px;
-            }
-
-            button {
-                width: 100%;
-            }
-
-            .console {
-                min-height: 265px;
-            }
-
-            #message {
-                min-height: 220px;
-                max-height: 320px;
-                padding: 13px;
-                font-size: 0.82rem;
             }
         }
     </style>
 </head>
 <body>
-    <main>
-        <section class="mast" aria-label="遠端喚醒">
-            <div>
-                <div class="brand-mark" aria-hidden="true"></div>
-                <p class="eyebrow">Wake-on-LAN</p>
-                <h1>遠端喚醒控制台</h1>
-                <p class="mast-copy">家裡的機器不用一直醒著。連線、登入、送出喚醒，讓主機在需要時回到線上。</p>
-            </div>
-            <div class="status-strip">
-                <div class="status-row">
-                    <span>SESSION</span>
-                    <strong id="session-status">LOCKED</strong>
-                </div>
-                <div class="status-row">
-                    <span>SOCKET</span>
-                    <strong id="socket-status-text">OFFLINE</strong>
-                </div>
-                <div class="status-row">
-                    <span>JOB</span>
-                    <strong id="job-status">IDLE</strong>
-                </div>
-            </div>
-        </section>
+    <div class="container">
+        <h1>遠端喚醒服務</h1>
 
-        <section class="workspace" aria-label="控制面板">
-            <div class="toolbar">
-                <div class="toolbar-title">控制面板</div>
-                <div class="connection" aria-live="polite">
-                    <span id="socket-dot" class="dot"></span>
-                    <span id="socket-label">未連線</span>
-                </div>
-            </div>
+        <div class="connection" aria-live="polite">
+            <span id="socket-dot" class="dot"></span>
+            <span id="socket-label">未連線</span>
+        </div>
 
-            <form id="login-form">
-                <input type="text" name="username" autocomplete="username" class="hidden">
-                <div class="field">
-                    <label for="password">密碼</label>
-                    <input type="password" id="password" name="password" autocomplete="current-password" required>
-                </div>
-                <button type="submit" id="submit-password">登入</button>
-            </form>
-
-            <div id="device-section" class="controls hidden">
-                <div class="field">
-                    <label for="device-select">裝置</label>
-                    <select id="device-select"></select>
-                </div>
-                <button id="wakeup-button" type="button">喚醒</button>
+        <div class="status-strip" aria-label="系統狀態">
+            <div class="status-row">
+                <span>SESSION</span>
+                <strong id="session-status">LOCKED</strong>
             </div>
-
-            <div class="console" aria-live="polite">
-                <div class="console-head">
-                    <span>EVENT LOG</span>
-                    <span id="log-state">READY</span>
-                </div>
-                <div id="message"></div>
+            <div class="status-row">
+                <span>SOCKET</span>
+                <strong id="socket-status-text">OFFLINE</strong>
             </div>
-        </section>
-    </main>
+            <div class="status-row">
+                <span>JOB</span>
+                <strong id="job-status">IDLE</strong>
+            </div>
+        </div>
+
+        <form id="login-form">
+            <input type="text" name="username" autocomplete="username" class="hidden">
+            <div class="form-group">
+                <label for="password">請輸入密碼</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" id="submit-password">驗證並載入裝置</button>
+        </form>
+
+        <div id="device-section" class="hidden">
+            <div class="form-group">
+                <label for="device-select">選擇裝置</label>
+                <select id="device-select"></select>
+            </div>
+            <button id="wakeup-button" type="button">喚醒</button>
+        </div>
+
+        <div id="message"></div>
+    </div>
 
     <script>
         const loginForm = document.getElementById('login-form');
