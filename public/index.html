@@ -482,7 +482,11 @@
                     sessionStatus.textContent = 'LOCKED';
                     deviceSection.classList.add('hidden');
                     loginForm.classList.remove('hidden');
-                    appendLog('登入狀態已失效，請重新登入。', 'error');
+                    const reason = event.reason || 'Unauthorized';
+                    const message = reason === 'Invalid origin'
+                        ? 'WebSocket 來源驗證失敗，請檢查反向代理 Host 設定。'
+                        : '登入狀態已失效，請重新登入。';
+                    appendLog(message, 'error');
                     return;
                 }
                 if (!intentionalClose && sessionStatus.textContent === 'UNLOCKED') {

@@ -87,4 +87,12 @@ test('isAllowedOrigin rejects cross-origin WebSocket requests', () => {
             origin: 'https://wol.example.com'
         }
     }), true);
+
+    assert.equal(isAllowedOrigin({
+        headers: {
+            host: '127.0.0.1:5000',
+            'x-forwarded-host': 'wol.example.com',
+            origin: 'https://wol.example.com'
+        }
+    }), true);
 });

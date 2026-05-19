@@ -179,10 +179,24 @@ function isAllowedOrigin(req) {
     if (!origin) return true;
 
     try {
-        return new URL(origin).host === req.headers.host;
+        const originHost = new URL(origin).host;
+        const forwardedHost = String(req.headers['x-forwarded-host'] || '').split(',')[0].trim();
+        const allowedHosts = new Set([req.headers.host, forwardedHost].filter(Boolean));
+        return allowedHosts.has(originHost);
     } catch (error) {
         return false;
     }
+}
+
+function closeUnauthorizedWebSocket(ws, reason, req) {
+    console.warn('WebSocket rejected:', {
+        reason,
+        host: req.headers.host,
+        forwardedHost: req.headers['x-forwarded-host'],
+        origin: req.headers.origin,
+        hasCookie: Boolean(req.headers.cookie)
+    });
+    ws.close(1008, reason);
 }
 
 function createJobStore({ loadDevicesImpl = loadDevices, sendMagicPacketImpl = sendMagicPacket } = {}) {
@@ -360,13 +374,13 @@ function createServer(options = {}) {
 
     wss.on('connection', (ws, req) => {
         if (!isAllowedOrigin(req)) {
-            ws.close(1008, 'Invalid origin');
+            closeUnauthorizedWebSocket(ws, 'Invalid origin', req);
             return;
         }
 
         const token = parseCookies(req.headers.cookie).wol_session;
         if (!sessions.isValid(token)) {
-            ws.close(1008, 'Unauthorized');
+            closeUnauthorizedWebSocket(ws, token ? 'Invalid session' : 'Missing session cookie', req);
             return;
         }
 
