@@ -56,7 +56,7 @@
             min-height: 100vh;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: minmax(250px, 0.82fr) minmax(360px, 1.18fr);
+            grid-template-columns: minmax(420px, 1fr) minmax(280px, 360px);
             align-items: center;
             gap: 18px;
             padding: 28px 0;
@@ -74,6 +74,7 @@
 
         .mast {
             min-height: 620px;
+            order: 2;
             padding: 26px;
             color: var(--paper);
             background:
@@ -130,7 +131,7 @@
             margin: 0;
             max-width: 8ch;
             font-family: Georgia, "Noto Serif TC", serif;
-            font-size: clamp(3rem, 6vw, 5.65rem);
+            font-size: clamp(2.85rem, 5vw, 4.8rem);
             font-weight: 700;
             line-height: 0.92;
             letter-spacing: 0;
@@ -179,6 +180,7 @@
 
         .workspace {
             min-height: 620px;
+            order: 1;
             padding: 22px;
             background:
                 linear-gradient(180deg, rgba(255, 252, 244, 0.82), rgba(225, 210, 187, 0.9)),
@@ -366,7 +368,8 @@
             main {
                 grid-template-columns: 1fr;
                 align-items: start;
-                padding: 14px 0;
+                gap: 12px;
+                padding: 10px 0;
             }
 
             .mast,
@@ -374,33 +377,124 @@
                 min-height: auto;
             }
 
+            .workspace {
+                order: 1;
+                padding: 16px;
+                gap: 14px;
+            }
+
             .mast {
-                padding: 22px;
+                order: 2;
+                padding: 16px;
+                display: grid;
+                gap: 16px;
+                background:
+                    linear-gradient(160deg, rgba(214, 106, 49, 0.16), transparent 44%),
+                    var(--bg-soft);
+            }
+
+            .mast::after {
+                inset: 10px;
+            }
+
+            .brand-mark {
+                width: 46px;
+                height: 46px;
+                margin-bottom: 14px;
+            }
+
+            .brand-mark::before {
+                width: 22px;
+                height: 22px;
+            }
+
+            .eyebrow {
+                margin-bottom: 8px;
+                font-size: 0.68rem;
+            }
+
+            h1 {
+                max-width: none;
+                font-size: clamp(2.05rem, 10vw, 2.85rem);
+                line-height: 1;
             }
 
             .mast-copy {
+                width: auto;
                 max-width: none;
+                margin-top: 12px;
+                font-size: 0.9rem;
+                line-height: 1.65;
+            }
+
+            .status-strip {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 7px;
+            }
+
+            .status-row {
+                min-height: 68px;
+                flex-direction: column;
+                justify-content: center;
+                gap: 7px;
+                padding: 8px;
+                text-align: center;
+            }
+
+            .status-row span:first-child {
+                font-size: 0.62rem;
+            }
+
+            .status-row strong {
+                font-size: 0.74rem;
+                overflow-wrap: anywhere;
             }
         }
 
         @media (max-width: 560px) {
             main {
-                width: min(100% - 18px, 1180px);
+                width: min(100% - 16px, 1180px);
             }
 
-            .toolbar,
             form,
             .controls {
                 grid-template-columns: 1fr;
             }
 
             .toolbar {
-                align-items: start;
-                flex-direction: column;
+                align-items: center;
+                flex-direction: row;
+                padding: 4px 0 14px;
+            }
+
+            .toolbar-title {
+                font-size: 1.55rem;
+            }
+
+            .connection {
+                min-height: 34px;
+                padding: 0 11px;
+                font-size: 0.82rem;
+            }
+
+            form,
+            .controls {
+                padding: 14px;
             }
 
             button {
                 width: 100%;
+            }
+
+            .console {
+                min-height: 265px;
+            }
+
+            #message {
+                min-height: 220px;
+                max-height: 320px;
+                padding: 13px;
+                font-size: 0.82rem;
             }
         }
     </style>
