@@ -6,216 +6,538 @@
     <title>遠端喚醒控制台</title>
     <style>
         :root {
-            --primary-color: #007bff;
-            --success-color: #28a745;
-            --error-color: #dc3545;
-            --bg-color: #f8f9fa;
-            --card-bg: #ffffff;
-            --text-color: #333;
-            --border-color: #dee2e6;
+            --ink: #15181b;
+            --panel: #f6f4ef;
+            --panel-strong: #ece7dc;
+            --line: #c8c0b2;
+            --text: #20242a;
+            --muted: #67727e;
+            --accent: #0f766e;
+            --accent-strong: #0b5f59;
+            --warn: #b45309;
+            --danger: #b42318;
+            --success: #15803d;
+            --shadow: 0 18px 50px rgba(21, 24, 27, 0.18);
         }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            margin: 0; padding: 20px; background-color: var(--bg-color); color: var(--text-color);
-            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+            margin: 0;
+            min-height: 100vh;
+            color: var(--text);
+            background:
+                linear-gradient(90deg, rgba(21, 24, 27, 0.045) 1px, transparent 1px),
+                linear-gradient(180deg, rgba(21, 24, 27, 0.045) 1px, transparent 1px),
+                #d8d1c2;
+            background-size: 28px 28px;
+            font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
         }
-        .container {
-            width: 100%; max-width: 450px; background: var(--card-bg); padding: 25px 30px;
-            border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+
+        main {
+            width: min(1080px, calc(100% - 32px));
+            min-height: 100vh;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: minmax(280px, 360px) 1fr;
+            align-items: center;
+            gap: 28px;
+            padding: 32px 0;
         }
-        h1 { text-align: center; margin-bottom: 25px; font-weight: 600; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 500; }
+
+        .mast {
+            color: #f9f3e7;
+            background: var(--ink);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: var(--shadow);
+            min-height: 560px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .mast::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 30% 20%, rgba(20, 184, 166, 0.26), transparent 28%),
+                linear-gradient(135deg, transparent 0 52%, rgba(245, 158, 11, 0.16) 52% 54%, transparent 54%);
+            pointer-events: none;
+        }
+
+        .mast > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .eyebrow {
+            margin: 0 0 14px;
+            color: #facc15;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: clamp(2.4rem, 5vw, 4.8rem);
+            line-height: 0.95;
+            letter-spacing: 0;
+        }
+
+        .status-strip {
+            display: grid;
+            gap: 10px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 12px 0;
+            border-top: 1px solid rgba(249, 243, 231, 0.18);
+            font-size: 0.95rem;
+        }
+
+        .status-row span:first-child {
+            color: rgba(249, 243, 231, 0.64);
+        }
+
+        .workspace {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow);
+            min-height: 560px;
+            padding: 24px;
+            display: grid;
+            grid-template-rows: auto auto 1fr;
+            gap: 18px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 16px;
+        }
+
+        .toolbar-title {
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        .connection {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 34px;
+            padding: 0 10px;
+            border: 1px solid var(--line);
+            background: #fffaf0;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: var(--warn);
+        }
+
+        .dot.connected {
+            background: var(--success);
+        }
+
+        form, .controls {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .field {
+            display: grid;
+            gap: 7px;
+        }
+
+        label {
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 800;
+        }
+
         input, select, button {
-            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);
-            box-sizing: border-box; font-size: 16px;
+            min-height: 46px;
+            border: 1px solid var(--line);
+            border-radius: 0;
+            font: inherit;
         }
+
+        input, select {
+            width: 100%;
+            padding: 0 12px;
+            color: var(--text);
+            background: #fffaf0;
+        }
+
         button {
-            background-color: var(--primary-color); color: white; cursor: pointer; border: none;
-            font-weight: 600; transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 118px;
+            padding: 0 16px;
+            color: white;
+            background: var(--accent);
+            border-color: var(--accent);
+            font-weight: 850;
+            cursor: pointer;
         }
-        button:hover { background-color: #0056b3; }
-        button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
-        .hidden { display: none; }
+
+        button:hover:not(:disabled) {
+            background: var(--accent-strong);
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            background: #8b928f;
+            border-color: #8b928f;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .console {
+            min-height: 300px;
+            background: #111416;
+            color: #e8e0d2;
+            border: 1px solid #111416;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        .console-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(232, 224, 210, 0.18);
+            color: #facc15;
+            font-size: 0.8rem;
+            font-weight: 850;
+        }
+
         #message {
-            margin-top: 20px; padding: 12px; border-radius: 8px; text-align: left;
-            font-family: "Courier New", Courier, monospace; background-color: #f0f0f0;
-            border: 1px solid var(--border-color); min-height: 50px;
-            opacity: 0; transition: opacity 0.3s;
-            overflow-y: auto; max-height: 200px;
+            margin: 0;
+            padding: 14px;
+            overflow-y: auto;
+            max-height: 360px;
+            min-height: 260px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            font-size: 0.9rem;
+            line-height: 1.55;
         }
-        #message.show { opacity: 1; }
-        #message.success { border-left: 5px solid var(--success-color); }
-        #message.error { border-left: 5px solid var(--error-color); }
-        #message.info { border-left: 5px solid var(--primary-color); }
-        #message p { margin: 5px 0; padding: 0; white-space: pre-wrap; }
+
+        #message p {
+            margin: 0 0 8px;
+            white-space: pre-wrap;
+        }
+
+        #message p.error {
+            color: #fca5a5;
+        }
+
+        #message p.success {
+            color: #86efac;
+        }
+
+        @media (max-width: 760px) {
+            main {
+                grid-template-columns: 1fr;
+                align-items: start;
+                padding: 16px 0;
+            }
+
+            .mast, .workspace {
+                min-height: auto;
+            }
+
+            .mast {
+                padding: 22px;
+            }
+
+            form, .controls {
+                grid-template-columns: 1fr;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>遠端喚醒服務</h1>
-        
-        <!-- ***** 修改開始 ***** -->
-        <!-- 使用 form 標籤包裹 -->
-        <form id="login-form">
-            <div id="password-section">
-                <!-- 為了密碼管理器相容性，加入一個看不見的 username 欄位 -->
-                <input type="text" name="username" autocomplete="username" style="display:none;">
-
-                <div class="form-group">
-                    <label for="password">請輸入密碼</label>
-                    <!-- 為 password 欄位加上 name 和 autocomplete -->
-                    <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required>
+    <main>
+        <section class="mast" aria-label="遠端喚醒">
+            <div>
+                <p class="eyebrow">Wake-on-LAN</p>
+                <h1>遠端喚醒控制台</h1>
+            </div>
+            <div class="status-strip">
+                <div class="status-row">
+                    <span>SESSION</span>
+                    <strong id="session-status">LOCKED</strong>
                 </div>
-                <!-- 將按鈕類型改為 submit -->
-                <button type="submit" id="submit-password">驗證並載入裝置</button>
+                <div class="status-row">
+                    <span>SOCKET</span>
+                    <strong id="socket-status-text">OFFLINE</strong>
+                </div>
+                <div class="status-row">
+                    <span>JOB</span>
+                    <strong id="job-status">IDLE</strong>
+                </div>
             </div>
-        </form>
-        <!-- ***** 修改結束 ***** -->
+        </section>
 
-        <div id="device-section" class="hidden">
-            <div class="form-group">
-                <label for="device-select">選擇裝置</label>
-                <select id="device-select"></select>
+        <section class="workspace" aria-label="控制面板">
+            <div class="toolbar">
+                <div class="toolbar-title">控制面板</div>
+                <div class="connection" aria-live="polite">
+                    <span id="socket-dot" class="dot"></span>
+                    <span id="socket-label">未連線</span>
+                </div>
             </div>
-            <button id="wakeup-button">喚醒</button>
-        </div>
-        <div id="message"></div>
-    </div>
+
+            <form id="login-form">
+                <input type="text" name="username" autocomplete="username" class="hidden">
+                <div class="field">
+                    <label for="password">密碼</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+                </div>
+                <button type="submit" id="submit-password">登入</button>
+            </form>
+
+            <div id="device-section" class="controls hidden">
+                <div class="field">
+                    <label for="device-select">裝置</label>
+                    <select id="device-select"></select>
+                </div>
+                <button id="wakeup-button" type="button">喚醒</button>
+            </div>
+
+            <div class="console" aria-live="polite">
+                <div class="console-head">
+                    <span>EVENT LOG</span>
+                    <span id="log-state">READY</span>
+                </div>
+                <div id="message"></div>
+            </div>
+        </section>
+    </main>
 
     <script>
-        const loginForm = document.getElementById('login-form'); // 選取 form
-        const passwordSection = document.getElementById('password-section');
+        const loginForm = document.getElementById('login-form');
         const deviceSection = document.getElementById('device-section');
         const passwordInput = document.getElementById('password');
         const submitPasswordBtn = document.getElementById('submit-password');
         const deviceSelect = document.getElementById('device-select');
         const wakeupButton = document.getElementById('wakeup-button');
         const messageDiv = document.getElementById('message');
+        const socketDot = document.getElementById('socket-dot');
+        const socketLabel = document.getElementById('socket-label');
+        const socketStatusText = document.getElementById('socket-status-text');
+        const sessionStatus = document.getElementById('session-status');
+        const jobStatus = document.getElementById('job-status');
+        const logState = document.getElementById('log-state');
 
         let devices = [];
-        let currentPassword = '';
-        let socket;
+        let socket = null;
+        let reconnectTimer = null;
+        let reconnectDelay = 1000;
+        let intentionalClose = false;
+        let activeJobId = localStorage.getItem('wolActiveJobId') || '';
 
-        // --- WebSocket 初始化與事件處理 ---
-        function initializeWebSocket() {
-            // 使用 `ws://` 或 `wss://` 協定，並指向當前主機
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            submitPasswordBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: passwordInput.value })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    appendLog(data.message || '登入失敗。', 'error');
+                    passwordInput.value = '';
+                    return;
+                }
+
+                passwordInput.value = '';
+                devices = data.devices;
+                populateDeviceSelect(devices);
+                loginForm.classList.add('hidden');
+                deviceSection.classList.remove('hidden');
+                sessionStatus.textContent = 'UNLOCKED';
+                clearMessage();
+                appendLog('已登入。');
+                connectWebSocket();
+            } catch (error) {
+                appendLog('無法連線到伺服器。', 'error');
+            } finally {
+                submitPasswordBtn.disabled = false;
+            }
+        });
+
+        wakeupButton.addEventListener('click', () => {
+            const deviceId = deviceSelect.value;
+            if (!deviceId) return;
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                appendLog('WebSocket 尚未連線，正在重連。', 'error');
+                connectWebSocket();
+                return;
+            }
+
+            clearMessage();
+            setJobRunning(true);
+            socket.send(JSON.stringify({ type: 'wakeup', deviceId }));
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && sessionStatus.textContent === 'UNLOCKED') {
+                connectWebSocket();
+            }
+        });
+
+        window.addEventListener('online', () => {
+            if (sessionStatus.textContent === 'UNLOCKED') {
+                connectWebSocket();
+            }
+        });
+
+        function connectWebSocket() {
+            if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+                return;
+            }
+
+            intentionalClose = false;
+            clearTimeout(reconnectTimer);
+            updateSocketState('連線中', false);
+
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             socket = new WebSocket(`${protocol}//${window.location.host}`);
 
             socket.onopen = () => {
-                console.log('WebSocket 連線成功');
+                reconnectDelay = 1000;
+                updateSocketState('已連線', true);
+                appendLog('WebSocket 已連線。');
+                if (activeJobId) {
+                    socket.send(JSON.stringify({ type: 'resume', jobId: activeJobId }));
+                }
             };
 
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                
-                // 處理後端推送的訊息
+                if (data.type === 'job-started') {
+                    activeJobId = data.jobId;
+                    localStorage.setItem('wolActiveJobId', activeJobId);
+                    setJobRunning(true);
+                    return;
+                }
+                if (data.type === 'resume-miss') {
+                    localStorage.removeItem('wolActiveJobId');
+                    activeJobId = '';
+                    setJobRunning(false);
+                    return;
+                }
                 if (data.type === 'log') {
                     appendLog(data.message);
-                } else if (data.type === 'done') {
-                    // 收到結束信號
-                    messageDiv.classList.add(data.success ? 'success' : 'error');
-                    wakeupButton.disabled = false;
-                    wakeupButton.textContent = '喚醒';
+                    return;
+                }
+                if (data.type === 'done') {
+                    appendLog(data.success ? '工作完成。' : '工作結束：裝置未確認醒來。', data.success ? 'success' : 'error');
+                    localStorage.removeItem('wolActiveJobId');
+                    activeJobId = '';
+                    setJobRunning(false);
                 }
             };
 
-            socket.onclose = () => {
-                console.log('WebSocket 連線已關閉');
-                appendLog('與伺服器的連線已中斷，請重新整理頁面。', 'error');
-                wakeupButton.disabled = true;
+            socket.onclose = (event) => {
+                updateSocketState('未連線', false);
+                if (event.code === 1008) {
+                    sessionStatus.textContent = 'LOCKED';
+                    deviceSection.classList.add('hidden');
+                    loginForm.classList.remove('hidden');
+                    appendLog('登入狀態已失效，請重新登入。', 'error');
+                    return;
+                }
+                if (!intentionalClose && sessionStatus.textContent === 'UNLOCKED') {
+                    scheduleReconnect();
+                }
             };
 
-            socket.onerror = (error) => {
-                console.error('WebSocket 錯誤:', error);
-                appendLog('連線發生錯誤。', 'error');
+            socket.onerror = () => {
+                updateSocketState('錯誤', false);
             };
         }
-        
-        // ***** 修改開始 *****
-        // 將事件監聽器綁定到 form 的 submit 事件
-        loginForm.addEventListener('submit', async (event) => {
-            // 阻止表單預設的頁面重整行為
-            event.preventDefault(); 
-            
-            currentPassword = passwordInput.value;
-            
-            const response = await fetch('/api/devices', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: currentPassword })
-            });
-            const data = await response.json();
 
-            if (data.success) {
-                devices = data.devices;
-                populateDeviceSelect(devices);
-                // 隱藏整個表單，而不是只有 password-section
-                loginForm.classList.add('hidden'); 
-                deviceSection.classList.remove('hidden');
-                messageDiv.innerHTML = '';
-                // 密碼驗證成功後，才初始化 WebSocket
-                initializeWebSocket();
-            } else {
-                alert(data.message);
-                // 登入失敗後，清空密碼欄位可能是個好習慣
-                passwordInput.value = '';
-            }
-        });
-        // ***** 修改結束 *****
+        function scheduleReconnect() {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(() => {
+                appendLog('WebSocket 重新連線中。');
+                connectWebSocket();
+                reconnectDelay = Math.min(reconnectDelay * 1.7, 12000);
+            }, reconnectDelay);
+        }
 
-        wakeupButton.addEventListener('click', () => {
-            const selectedIndex = deviceSelect.value;
-            if (selectedIndex === "") return;
-
-            // 檢查 WebSocket 連線狀態
-            if (!socket || socket.readyState !== WebSocket.OPEN) {
-                appendLog('錯誤：未連線到伺服器。', 'error');
-                return;
-            }
-
-            const selectedDevice = devices[selectedIndex];
-            
-            clearMessage();
-            messageDiv.classList.add('info', 'show'); // 顯示訊息框並設定初始樣式
-            wakeupButton.disabled = true;
-            wakeupButton.textContent = '處理中...';
-
-            // 透過 WebSocket 發送喚醒請求
-            socket.send(JSON.stringify({
-                type: 'wakeup',
-                payload: {
-                    ...selectedDevice,
-                    password: currentPassword
-                }
-            }));
-        });
-        
-        function populateDeviceSelect(devices) {
-            deviceSelect.innerHTML = '<option value="">-- 請選擇一個裝置 --</option>';
-            devices.forEach((device, index) => {
+        function populateDeviceSelect(deviceList) {
+            deviceSelect.innerHTML = '<option value="">選擇一台裝置</option>';
+            deviceList.forEach((device) => {
                 const option = document.createElement('option');
-                option.value = index;
+                option.value = device.id;
                 option.textContent = `${device.name} (${device.ip})`;
                 deviceSelect.appendChild(option);
             });
         }
 
+        function updateSocketState(label, connected) {
+            socketLabel.textContent = label;
+            socketStatusText.textContent = connected ? 'ONLINE' : 'OFFLINE';
+            socketDot.classList.toggle('connected', connected);
+        }
+
+        function setJobRunning(running) {
+            wakeupButton.disabled = running;
+            wakeupButton.textContent = running ? '處理中' : '喚醒';
+            jobStatus.textContent = running ? 'RUNNING' : 'IDLE';
+            logState.textContent = running ? 'STREAMING' : 'READY';
+        }
+
         function clearMessage() {
             messageDiv.innerHTML = '';
-            messageDiv.className = '';
         }
 
-        // 新的日誌附加函數
-        function appendLog(logMessage) {
+        function appendLog(logMessage, tone = '') {
             const line = document.createElement('p');
-            line.textContent = logMessage;
+            if (tone) line.className = tone;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${logMessage}`;
             messageDiv.appendChild(line);
-            // 自動捲動到最底部
             messageDiv.scrollTop = messageDiv.scrollHeight;
         }
-
     </script>
 </body>
 </html>

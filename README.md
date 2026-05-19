@@ -1,185 +1,201 @@
-# 遠端喚醒 (Wake-on-LAN) 網頁服務
+# 遠端喚醒 Wake-on-LAN 網頁服務
 
-一個輕量、現代化的 Wake-on-LAN (WOL) 網頁伺服器，專為在 Raspberry Pi 或其他家用 Linux 主機上 24/7 運行而設計。透過簡潔的網頁介面，您可以在區域網路內安全地喚醒您的電腦。
+一個輕量的 Wake-on-LAN 控制台，適合放在 Raspberry Pi、NAS 或家用 Linux 主機上長時間運行。前端登入後可選擇 `devices.json` 內的裝置並送出喚醒指令，後端會透過 WebSocket 回傳即時 ping 狀態。
 
 ## 功能特色
 
-*   **現代化前端介面**：乾淨、響應式的單頁應用，在手機和桌面瀏覽器上都有良好體驗。
-*   **即時日誌反饋**：使用 WebSocket 實現，喚醒過程中的每一步 `ping` 結果都會即時推送到前端，進度一目了然。
-*   **安全優先**：
-    *   支援 HTTPS (透過自簽 SSL 證書)。
-    *   密碼使用 `bcrypt` 進行雜湊儲存，不暴露明文。
-    *   設定與程式碼分離，敏感資訊儲存在外部設定檔中。
-*   **設定簡單**：所有裝置與密碼設定都透過外部 JSON 檔案管理，無需修改程式碼。
-*   **為 Raspberry Pi 優化**：採用輕量化的 Node.js 技術棧，資源佔用低，並提供完整的 `systemd` 開機自啟動設定教學。
+- 單頁控制台，支援桌面與手機版面。
+- WebSocket 自動重連，分頁離開或網路短暫中斷後會嘗試恢復連線。
+- 喚醒工作使用 job id 保存進度；重新連線後會重播已收到的日誌。
+- 密碼以 `bcrypt` 雜湊存放在 `config.json`。
+- 登入成功後使用短期 HttpOnly cookie session，WebSocket 不再傳送密碼。
+- 後端只接受伺服器端 `devices.json` 內的裝置 ID，不信任前端傳來的 MAC/IP。
+- `wakeonlan` 使用 `execFile` 執行，並驗證 MAC/IP 格式，避免 shell 字串插值。
+- 內建登入速率限制與基本安全標頭。
 
 ## 技術棧
 
-*   **後端**: Node.js, Express, WebSocket (`ws`)
-*   **密碼學**: bcrypt
-*   **前端**: HTML, CSS, JavaScript (無框架)
-*   **部署**: Systemd
+- 後端：Node.js、Express、`ws`
+- 密碼：bcrypt
+- 前端：HTML、CSS、JavaScript
+- 系統工具：`wakeonlan`
 
----
+## 安全提醒
 
-## 部署指南
+這個服務會觸發內網裝置喚醒，而且你有開放外網存取，請至少做到：
 
-本指南以 Raspberry Pi OS (Debian-based) 為範例。
+- Node app 固定提供 HTTP，不內建 HTTPS；外網入口請交給 nginx 反代。
+- 不要直接把 Node HTTP 服務裸露到 Internet。
+- `config.json`、`devices.json`、`key.pem`、`cert.pem` 已在 `.gitignore`，不要提交到 Git。
+- 使用長密碼，避免重用其他服務的密碼。
+- 若曾經公開過舊版服務，建議更換密碼並重新產生 `config.json` 內的 bcrypt hash。
+- 若 `devices.json` 內有無效 MAC/IP，後端會忽略該裝置。
 
-### 1. 環境準備
+## 安裝
 
-首先，確保您的系統已安裝 `git`、`nvm` (或 Node.js) 以及 `wakeonlan` 工具。
+以下以 Debian/Raspberry Pi OS 為例。
 
 ```bash
-# 更新系統
-sudo apt update && sudo apt upgrade
-
-# 安裝 wakeonlan 工具
+sudo apt update
 sudo apt install wakeonlan git
 
-# 安裝 nvm 並安裝 Node.js LTS 版本 (推薦)
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-# 讓 nvm 生效
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-# 安裝並使用 Node LTS
+# 使用你偏好的方式安裝 Node.js LTS，例如 nvm
 nvm install --lts
-```
 
-### 2. 取得專案並安裝依賴
-
-```bash
-# 從 GitHub 複製您的專案
-git clone <你的專案Repo網址>
-cd <專案資料夾名稱>
-
-# 安裝 Node.js 依賴
+git clone <你的專案 Repo URL>
+cd wol-nodejs-app
 npm install
 ```
 
-### 3. 進行設定
+## 設定
 
-#### a. 設定要喚醒的裝置 (`devices.json`)
-
-複製範本檔案，並根據您的裝置資訊進行修改。
+### 1. 裝置清單
 
 ```bash
 cp devices.example.json devices.json
 nano devices.json
 ```
 
-檔案格式如下，您可以新增多個裝置：
+格式：
+
 ```json
 [
-    {
-        "name": "Desktop",
-        "mac": "xx:xx:xx:xx:xx:xx",
-        "ip": "192.168.1.1"
-    },
-    {
-        "name": "Server",
-        "mac": "xx:xx:xx:xx:xx:xx",
-        "ip": "192.168.1.2"
-    }
+  {
+    "name": "Desktop",
+    "mac": "AA:BB:CC:DD:EE:FF",
+    "ip": "192.168.1.10"
+  }
 ]
 ```
 
-#### b. 產生 SSL 證書
+### 2. 登入密碼
 
-為了使用 HTTPS，我們需要一組自簽 SSL 證書。
+產生 bcrypt hash：
 
 ```bash
-openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes -subj "/CN=localhost"
+node hash-generator.js "你的安全密碼"
 ```
-此指令會在專案根目錄產生 `key.pem` 和 `cert.pem` 兩個檔案。
 
-#### c. 設定密碼 (`config.json`)
+建立 `config.json`：
 
-我們不會將明文密碼儲存起來。請跟隨以下步驟：
+```json
+{
+  "hashedPassword": "貼上 node hash-generator.js 產生的完整 hash"
+}
+```
 
-1.  **產生密碼雜湊**：專案內附一個指令碼 `hash-generator.js`。執行它來產生密碼的 `bcrypt` 雜湊值。
-    ```bash
-    # 將 "你的安全密碼" 換成您想設定的實際密碼
-    node hash-generator.js "你的安全密碼"
-    ```
-2.  **複製產生的雜湊值**：複製終端機輸出的完整雜湊字串 (以 `$2b$...` 開頭)。
+也可以在 `config.json` 指定 port：
 
-3.  **建立設定檔**：
-    ```bash
-    nano config.json
-    ```
-4.  將以下內容貼入，並將 `hashedPassword` 的值替換為您剛剛複製的雜湊值：
-    ```json
-    {
-        "hashedPassword": "貼上你複製的雜湊值"
-    }
-    ```
+```json
+{
+  "hashedPassword": "貼上 hash",
+  "port": 5050
+}
+```
 
-### 4. 手動測試
+或用環境變數覆蓋：
 
-在設定為開機自啟動前，先手動執行一次，確保所有設定都正確無誤。
+```bash
+PORT=5050 npm start
+```
+
+## 執行
 
 ```bash
 npm start
 ```
 
-如果看到 `WOL HTTPS 伺服器正在 https://0.0.0.0:5000 上運行` 的訊息，代表伺服器已成功啟動。您可以打開瀏覽器訪問 `https://<你的Pi的IP>:5000` 進行測試 (瀏覽器會提示憑證不安全，請選擇「繼續前往」)。
+預設會監聽：
 
-### 5. 設定開機自啟動 (Systemd)
+```text
+http://0.0.0.0:5000
+```
 
-1.  **建立 `systemd` 服務檔案**：
-    ```bash
-    sudo nano /etc/systemd/system/wol-node.service
-    ```
+在同一台主機測試：
 
-2.  **貼入以下設定**：
-    **注意：** 請務必根據您的實際情況，修改 `User`、`WorkingDirectory` 和 `ExecStart` 中的使用者名稱與路徑。
-    ```ini
-    [Unit]
-    Description=Node.js Wake On LAN Web Service
-    # 確保在網路連線後才啟動
-    After=network.target
+```bash
+curl -I http://127.0.0.1:5000
+```
 
-    [Service]
-    User=pi
-    Group=pi
-    WorkingDirectory=/home/pi/wol-nodejs-app
-    # 直接執行 node，而不是 npm，這樣更穩定
-    ExecStart=/home/pi/.nvm/versions/node/v22.19.0/bin/node /home/pi/wol-nodejs-app/server.js
-    
-    # 如果服務失敗，自動重啟
-    Restart=always
-    RestartSec=10
+## 外網部署建議
 
-    [Install]
-    WantedBy=multi-user.target
-    ```
-    > **提示**: 您可以透過 `whoami` 取得使用者名稱，`pwd` 取得當前目錄路徑，`which node` 取得 node 的絕對路徑。
+建議讓 Node app 只在內部網路或本機可達，外網入口交給 nginx。TLS 憑證、網域、存取限制都應該在 nginx 層處理，Node app 不需要也不會讀取 `cert.pem` 或 `key.pem`。
 
-3.  **啟動並設定開機自啟動**：
-    ```bash
-    # 讓 systemd 讀取新的設定檔
-    sudo systemctl daemon-reload
-    # 立即啟動服務
-    sudo systemctl start wol-node.service
-    # 設定開機時自動啟動
-    sudo systemctl enable wol-node.service
-    ```
+Nginx 範例：
 
-4.  **檢查服務狀態**：
-    ```bash
-    sudo systemctl status wol-node.service
-    ```
-    如果看到 `Active: active (running)`，恭喜您，部署已全部完成！
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name wol.example.com;
 
-## 如何使用
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
 
-服務啟動後，在同一個區域網路下的任何裝置（手機、電腦），打開瀏覽器訪問 `https://<你的主機IP>:5000` 即可。
+如果你只在內網使用，也可以讓 nginx 用純 HTTP 反代到 `127.0.0.1:5000`；重點是不要把 Node app 本身直接暴露到公網。
 
+## Systemd
 
-# Notes
-本專案由 Google Gemini-2.5 Pro 完成，有沒有 bug 或是漏洞我不知道，這個 Tool 只是讓我方便使用，請自行斟酌使用。
+建立服務檔：
 
-我自己先前使用的是 [Remote-Wake-Sleep-On-LAN-Server](https://github.com/bluehomewu/Remote-Wake-Sleep-On-LAN-Server/tree/main) 這個專案，但由於他的前端介面好醜，而且有點過於複雜以及回應不夠即時，所以我就自己用 Google Gemini 2.5 Pro 寫了一個。  
-這種東西應該沒有什麼太複雜的邏輯，所以我連 README.md 都讓 Gemini 幫我寫了，省得我自己打字 XD。
+```bash
+sudo nano /etc/systemd/system/wol-node.service
+```
 
+範例內容，請依實際路徑修改 `User`、`WorkingDirectory`、`ExecStart`：
+
+```ini
+[Unit]
+Description=Node.js Wake-on-LAN Web Service
+After=network.target
+
+[Service]
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/wol-nodejs-app
+ExecStart=/home/pi/.nvm/versions/node/v22.19.0/bin/node /home/pi/wol-nodejs-app/server.js
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+```
+
+啟用：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now wol-node.service
+sudo systemctl status wol-node.service
+```
+
+## 測試與安全檢查
+
+```bash
+npm test
+npm audit --omit=dev
+```
+
+目前測試涵蓋：
+
+- 裝置清單只接受有效 MAC/IP。
+- `wakeonlan` 不透過 shell 字串插值執行。
+- 無效 MAC 不會被送去執行。
+- session token 會過期。
+- 登入失敗會觸發速率限制。
+
+## 更新紀錄
+
+- 改為登入後 HttpOnly cookie session。
+- WebSocket 支援自動重連與 job 日誌恢復。
+- 喚醒 API 改為只傳 `deviceId`。
+- 修補命令注入風險與依賴套件 advisory。
+- 更新控制台 UI 與 README。
